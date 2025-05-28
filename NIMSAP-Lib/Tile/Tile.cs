@@ -1,6 +1,4 @@
-﻿using MessagePack;
-
-namespace NIMSAP_Lib;
+﻿namespace NIMSAP_Lib;
 
 public class Tile
 {
