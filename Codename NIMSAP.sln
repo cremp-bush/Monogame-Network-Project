@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NIMSAP-Client", "NIMSAP-Client\NIMSAP-Client.csproj", "{0A766E30-840E-49DC-ADFE-51D334BF3F03}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NIMSAP-Server", "NIMSAP-Server\NIMSAP-Server.csproj", "{1150463E-C9B1-435F-B4D1-04E9BFD2D175}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NIMSAP-Lib", "NIMSAP-Lib\NIMSAP-Lib.csproj", "{A7B88316-BFE2-4F40-BB72-66C4519AF6E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NIMSAP-MapEditor", "NIMSAP-MapEditor\NIMSAP-MapEditor.csproj", "{5D9BEB0A-B4F0-48AC-8552-56EA24541839}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0A766E30-840E-49DC-ADFE-51D334BF3F03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A766E30-840E-49DC-ADFE-51D334BF3F03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A766E30-840E-49DC-ADFE-51D334BF3F03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A766E30-840E-49DC-ADFE-51D334BF3F03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1150463E-C9B1-435F-B4D1-04E9BFD2D175}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1150463E-C9B1-435F-B4D1-04E9BFD2D175}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1150463E-C9B1-435F-B4D1-04E9BFD2D175}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1150463E-C9B1-435F-B4D1-04E9BFD2D175}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7B88316-BFE2-4F40-BB72-66C4519AF6E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7B88316-BFE2-4F40-BB72-66C4519AF6E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7B88316-BFE2-4F40-BB72-66C4519AF6E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7B88316-BFE2-4F40-BB72-66C4519AF6E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D9BEB0A-B4F0-48AC-8552-56EA24541839}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D9BEB0A-B4F0-48AC-8552-56EA24541839}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D9BEB0A-B4F0-48AC-8552-56EA24541839}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D9BEB0A-B4F0-48AC-8552-56EA24541839}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
