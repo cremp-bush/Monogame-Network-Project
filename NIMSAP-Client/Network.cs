@@ -205,8 +205,12 @@ public class Client
         udpClient.Client.ReceiveTimeout = 10000;
 
         while (udpClient.Available > 0) udpClient.Receive(ref udpServerEndPoint);
+
+        string serverIp = "127.0.0.1";
+        if (File.Exists("server_ip.txt")) File.ReadAllText("server_ip.txt");
+        else File.WriteAllText("server_ip.txt", serverIp);
         
-        udpServerEndPoint = IPEndPoint.Parse("26.177.219.48:" + port);
+        udpServerEndPoint = IPEndPoint.Parse(serverIp + ":" + port);
         
         udpThread = new Thread(Connect);
         
