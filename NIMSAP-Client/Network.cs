@@ -207,7 +207,7 @@ public class Client
         while (udpClient.Available > 0) udpClient.Receive(ref udpServerEndPoint);
 
         string serverIp = "127.0.0.1";
-        if (File.Exists("server_ip.txt")) File.ReadAllText("server_ip.txt");
+        if (File.Exists("server_ip.txt")) serverIp = File.ReadAllText("server_ip.txt");
         else File.WriteAllText("server_ip.txt", serverIp);
         
         udpServerEndPoint = IPEndPoint.Parse(serverIp + ":" + port);
