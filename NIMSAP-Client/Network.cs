@@ -192,7 +192,10 @@ public class Client
     private int bufferSize = 4096;
     private Thread udpThread;
     private bool connected = false;
+    private bool exit = false;
     private DateTime lastPing;
+    private DateTime lastServerPing;
+    private bool gotPing = true;
 
     public byte[] input = null;
     public event Action<PacketType, byte[]> DataReceived;
@@ -201,8 +204,9 @@ public class Client
     public void Start(int port)
     {
         udpClient = new UdpClient();
-        udpClient.Client.SendTimeout = 10000;
-        udpClient.Client.ReceiveTimeout = 10000;
+
+        udpClient.Client.SendTimeout = 5000;
+        udpClient.Client.ReceiveTimeout = 5000;
 
         while (udpClient.Available > 0) udpClient.Receive(ref udpServerEndPoint);
 
@@ -212,6 +216,8 @@ public class Client
         
         udpServerEndPoint = IPEndPoint.Parse(serverIp + ":" + port);
         
+        udpClient.Connect(udpServerEndPoint);
+        
         udpThread = new Thread(Connect);
         
         udpThread.Start();
@@ -219,98 +225,75 @@ public class Client
     
     /* TODO: Мне не нравится данное состояние Guid, его легко поменять/удалить */
     /* Подключение к серверу */
-    public void Connect()
+    void Connect()
     {
-        Logger.Log("Попытка соединения с сервером");
-        
-        udpClient.Connect(udpServerEndPoint);
-        
-        // Попытка прочитать GUID
-        if (File.Exists("guid.txt"))
+        while (!exit)
         {
-            guid = Guid.Parse(File.ReadAllText("guid.txt"));
-        }
-        // Создание нового Guid
-        else
-        {
-            guid = Guid.NewGuid();
-        }
-        UdpSendPacket(PacketType.Connection, guid.ToByteArray());
-        
-        UDPPacket packet = UdpGetPacket();
-        
-        if (packet.packetType == PacketType.Connection)
-        {
-            DataManager.playerId = BitConverter.ToInt32(packet.data);
-            File.WriteAllText("guid.txt", guid.ToString());
-            connected = true;
-            Logger.Log("Подключение установлено");
-            UdpSendPacket(PacketType.Map);
-            Listener();
-        }
-        else
-        {
-            Logger.Log("Не удалось установить подключение");
+            Logger.Log("Попытка соединения с сервером");
+
+            // Попытка прочитать GUID
+            if (File.Exists("guid.txt"))
+            {
+                guid = Guid.Parse(File.ReadAllText("guid.txt"));
+            }
+            // Создание нового Guid
+            else
+            {
+                guid = Guid.NewGuid();
+            }
+
+            // Подключение к серверу
+            UdpSendPacket(PacketType.Connection, guid.ToByteArray());
+            // Получаем ответ от сервера
+            UDPPacket packet = UdpGetPacket();
+
+            if (packet.packetType == PacketType.Connection)
+            {
+                Logger.Log("Подключение установлено");
+
+                DataManager.playerId = BitConverter.ToInt32(packet.data);
+                File.WriteAllText("guid.txt", guid.ToString());
+                connected = true;
+
+                lastServerPing = lastPing = DateTime.Now;
+                Listener();
+            }
+            else
+            {
+                Logger.Log("Не удалось установить подключение");
+            }
+            // Задержка перед новой попыткой соединения
+            if (!exit) Thread.Sleep(5000);
         }
     }
 
+    // TODO: Добавить переподключение к серверу
     /* Прослушивание сервера */
-    public void Listener()
+    void Listener()
     {
-        // udpClient.Dispose();
-        // Logger.Log("Запущен UDP поток");
         try
         {
-            lastPing = DateTime.Now;
             while (connected)
             {
                 // Отправка пинга каждую секунду
-                if (DateTime.Now.Subtract(lastPing).TotalSeconds > 1)
+                if (DateTime.Now.Subtract(lastPing).TotalSeconds > 5 && gotPing == true)
                 {
+                    gotPing = false;
                     UdpSendPacket(PacketType.Ping);
 
                     lastPing = DateTime.Now;
+                }
+                // Проверка на соединение с сервером
+                if (lastPing.Subtract(lastServerPing).TotalSeconds > 10)
+                {
+                    connected = false;
                 }
                 // Обработка полученных пакетов
                 if (udpClient.Available > 0)
                 {
                     UDPPacket packet = UdpGetPacket();
-                    
-                    switch (packet.packetType)
-                    {
-                        // Загрузка игровой карты
-                        case PacketType.Map:
-                        {
-                            Logger.Log("Получена карта мира");
-                            DataReceived?.Invoke(packet.packetType, packet.data);
 
-                            break;
-                        }
-                        // Создание новой сущности
-                        case PacketType.CreateEntity:
-                        {
-                            Logger.Log("Получено создание сущности");
-                            DataReceived?.Invoke(packet.packetType, packet.data);
-                            
-                            break;
-                        }
-                        // Модификация уже имеющейся сущности
-                        case PacketType.UpdateEntity:
-                        {
-                            Logger.Log("Получено изменение сущности");
-                            DataReceived?.Invoke(packet.packetType, packet.data);
-                            
-                            break;
-                        }
-                        // Удаление сущности
-                        case PacketType.DeleteEntity:
-                        {
-                            Logger.Log("Получено удаление сущности");
-                            DataReceived?.Invoke(packet.packetType, packet.data);
-                            
-                            break;
-                        }
-                    }
+                    PacketHandler(packet);
                 }
                 // Отправка действий клиента
                 if (input != null)
@@ -319,33 +302,81 @@ public class Client
                     input = null;
                 }
             }
+            Logger.Log("Потеряно соединение с сервером");
         }
         catch (Exception e)
         {
-            Logger.Log("Ошибка UDP потока", e);
+            Logger.Log("Ошибка ", e);
             Disconnect();
+        }
+    }
+    
+    /* Обработчик пакетов */
+    void PacketHandler(UDPPacket packet)
+    {
+        switch (packet.packetType)
+        {
+            // TODO: Переделать чтобы пинговалось постоянно
+            // Получение пинга от сервера
+            case PacketType.Ping:
+            {
+                gotPing = true;
+                lastServerPing = DateTime.Now;
+                // Console.WriteLine("Current ping: " + lastServerPing.Subtract(lastPing).Milliseconds);
+                
+                break;
+            }
+            // Загрузка игровой карты
+            case PacketType.Map:
+            {
+                DataReceived?.Invoke(packet.packetType, packet.data);
+
+                break;
+            }
+            // Создание новой сущности
+            case PacketType.CreateEntity:
+            {
+                DataReceived?.Invoke(packet.packetType, packet.data);
+                            
+                break;
+            }
+            // Модификация уже имеющейся сущности
+            case PacketType.UpdateEntity:
+            {
+                DataReceived?.Invoke(packet.packetType, packet.data);
+                            
+                break;
+            }
+            // Удаление сущности
+            case PacketType.DeleteEntity:
+            {
+                DataReceived?.Invoke(packet.packetType, packet.data);
+                            
+                break;
+            }
         }
     }
 
     /* Отправка пинга серверу */
-    void SendPing()
+    // TODO: Переписать под мнгопоток
+    /*void SendPing()
     {
         while (connected)
         {
             UdpSendPacket(PacketType.Ping);
         }
-    }
+    }*/
 
     /* Отключение от сервера */
     public void Disconnect()
     {
         UdpSendPacket(PacketType.Disconnection);
         Logger.Log("Соединение с сервером разорвано");
-        
+
+        exit = true;
         connected = false;
         udpClient.Close();
     }
-    /* Отправка  */
     
     /* Отправка пакетов серверу */
     public void UdpSendPacket(PacketType packetType, byte[] data = null)
@@ -368,6 +399,7 @@ public class Client
                 lastPing = DateTime.Now;
             }
             Logger.Log($"{packet.packetType} ПАКЕТ УСПЕШНО ОТПРАВЛЕН В РАЗМЕРЕ {packet.data.Length + 2} БАЙТ К {udpServerEndPoint}");
+            
         }
         catch (Exception e)
         {
@@ -390,15 +422,16 @@ public class Client
                 
                 Logger.Log($"Получен {packet.packetType} пакет размером {receive.Length} байт от {udpServerEndPoint}");
 
-                // Добавить проверку корректности данных
-                // TODO: Временно отключил Check для проверки
-                // udpClient.Send(new byte[2] {(byte)PacketType.Check, 1});
-                /*UDPPacket checkPacket = new UDPPacket();
+                // Отправялем пакет с корректностью данных
+                UDPPacket checkPacket = new UDPPacket();
                 checkPacket.CreatePacket(PacketType.Check, BitConverter.GetBytes(receive.Length), bufferSize);
                 List<byte[]> checkP = checkPacket.CreateBytePacket(bufferSize);
                 
+                // Обновление пинга
+                lastServerPing = DateTime.Now;
+                
                 udpClient.Send(checkP[0]);
-                Logger.Log($"Отправлен {checkPacket.packetType} пакет размером {checkP[0].Length} байт на {udpServerEndPoint}");*/
+                Logger.Log($"Отправлен {checkPacket.packetType} пакет размером {checkP[0].Length} байт на {udpServerEndPoint}");
                 
                 // Обновление пинга
                 lastPing = DateTime.Now;

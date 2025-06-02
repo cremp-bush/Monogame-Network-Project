@@ -59,8 +59,7 @@ public static class DataManager
         Entity entity = PacketAdapter.Unpack<Entity>(data);
         map.AddEntity(entity);
     }
-
-    // TODO: А как понять кто енто
+    
     static void UpdateEntity(byte[] data)
     {
         Entity entity = PacketAdapter.Unpack<Entity>(data);

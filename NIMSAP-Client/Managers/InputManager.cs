@@ -17,7 +17,6 @@ public static class InputManager
     public static byte[]? Update()
     { 
         motion = Vector2.Zero;
-        InputType type;
         byte[] data = new byte[2] {128, 128};
         
         // Получение состояний клавиатуры и мыши
@@ -27,7 +26,7 @@ public static class InputManager
         if (keyboard.GetPressedKeyCount() > 0)
         {
             // Выход из игры
-            if (keyboard.IsKeyDown(Keys.Escape)) data[0] = (byte)InputType.Exit;
+            if (keyboard.IsKeyDown(Keys.Escape)) return new byte[1];
             
             // Движение игрока
             if (keyboard.IsKeyDown(Keys.Up) || keyboard.IsKeyDown(Keys.W))    // Y -1
