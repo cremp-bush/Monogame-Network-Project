@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Data;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Microsoft.Xna.Framework;
@@ -13,6 +14,9 @@ namespace NIMSAP_Server;
 // TODO: Добавить препятствия сущностям (стены)
 // TODO: Добавить гранаты
 // TODO: Добавить интерфейс для отладки!!!
+// TODO: Пофиксить ходьбу в далёкие края чтобы не крашило
+// TODO: Интерполяция!!!
+// TODO: Снизить нагрузку на сеть от ходьбы!!!
 
 /* Временный запуск сервера */
 public class Aboba
@@ -37,7 +41,7 @@ public class Server
     private IPEndPoint ip;
     
     private Map map;
-    private short tick = 1000;
+    private short tick = 20;
     private int bufferSize;
     
     private Dictionary<IPEndPoint, Player> udpClients;
@@ -63,6 +67,7 @@ public class Server
     /* Игровая логика */
     async void GameLogic()
     {
+        GameTime gameTime = new GameTime();
         PeriodicTimer periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(1000/tick));
         while (await periodicTimer.WaitForNextTickAsync())
         {
@@ -75,7 +80,7 @@ public class Server
                     {
                         Creature creature = map.GetEntity(player.entityId) as Creature;
                         // Движение
-                        creature.position += player.motion * 0.1f;
+                        creature.position += player.motion * 0.5f;
                         // Разворотики и поворотики
                         if (player.lastMotion != player.motion)
                         {
@@ -114,6 +119,7 @@ public class Server
                     }
                 }
             }
+            // gameTime = gameTime.TotalGameTime + gameTime.ElapsedGameTime;
         }
     }
     
@@ -262,11 +268,11 @@ public class Server
     /* Отправка пакетов всем подключённым клиентам */
     void UdpSendPacketToClients(PacketType packetType, byte[] data = null)
     {
-        foreach (var client in udpClients)
+        foreach (var client in udpClients.Values.ToList())
         {
-            if (client.Value.connected == true)
+            if (client.connected == true)
             {
-                UdpSendPacket(packetType, client.Key, data);
+                UdpSendPacket(packetType, client.endPoint, data);
             }
         }
     }

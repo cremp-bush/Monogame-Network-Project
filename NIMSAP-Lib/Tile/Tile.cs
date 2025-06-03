@@ -17,5 +17,11 @@ public class Tile
     {
         floor = (byte)floorType;
         wall = (byte)wallType;
+    }    
+    // Копирование тайла
+    public Tile(Tile tile)
+    {
+        floor = tile.floor;
+        wall = tile.wall;
     }
 }

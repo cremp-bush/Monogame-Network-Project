@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.VisualBasic.CompilerServices;
+using Newtonsoft.Json;
 using NIMSAP_Lib.Entity;
 
 namespace NIMSAP_Lib.Map;
@@ -17,6 +18,7 @@ public partial class Map
     private Dictionary<int, Entity.Entity> entityList;
 
     // Создание пустой карты
+    [JsonConstructor]
     public Map(short width, short height)
     {
         this.width = width;
@@ -24,6 +26,23 @@ public partial class Map
         tileMap = new Tile[width, height];
         entityList = new Dictionary<int, Entity.Entity>();
         entityId = 0;
+    }
+    // Конструктор полной карты
+    public Map(short width, short height, Tile[,] tileMap, Dictionary<int, Entity.Entity> entityList)
+    {
+        this.width = width;
+        this.height = height;
+        this.tileMap = tileMap;
+        this.entityList = entityList;
+    }
+
+    // Копирование карты
+    public Map(Map map)
+    {
+        width = map.width;
+        height = map.height;
+        tileMap = map.GetTiles();
+        entityList = map.GetAllEntities();
     }
     
     // Добавление сущности
@@ -73,7 +92,7 @@ public partial class Map
     // Получить все сущности
     public Dictionary<int, Entity.Entity> GetAllEntities()
     {
-        return entityList;
+        return new Dictionary<int, Entity.Entity>(entityList);
     }
 
     // Модификация сущностей по ID
@@ -92,5 +111,11 @@ public partial class Map
     public void FlushEntities()
     {
         entityList.Clear();
+    }
+    
+    // Получить все клетки
+    public Tile[,] GetTiles()
+    {
+        return tileMap.Clone() as Tile[,];
     }
 }

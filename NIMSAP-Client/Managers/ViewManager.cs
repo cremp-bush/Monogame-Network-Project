@@ -35,34 +35,38 @@ public static class ViewManager
     }
     
     // Отрисовка мира
-    public static void Update(SpriteBatch spriteBatch, GraphicsDeviceManager graphics)
+    public static void Update(SpriteBatch spriteBatch, GraphicsDeviceManager graphics, GameTime gameTime)
     {
         Vector2 playerPosition = DataManager.GetPlayerPosition();
+        Vector2 oldPlayerPosition = DataManager.GetOldPlayerPosition();
+        Vector2 lerpedPlayerPosition = Vector2.Lerp(oldPlayerPosition, playerPosition, TimeManager.deltaTime);
+        // Console.WriteLine($"{oldPlayerPosition} -> {playerPosition} -> {lerpedPlayerPosition}");
         
         // Прогрузка тайлов в поле видимости игрока
         for (int y = 0; y <= Math.Ceiling(viewHeight); y++)
         {
-            for (int x = 0; x <= Math.Floor(viewWidth); x++)
+            for (int x = 0; x <= Math.Ceiling(viewWidth); x++)
             {
                 Texture2D texture;
-                float borderX = 0.5f - Math.Abs(((1 + (playerPosition.X - viewWidth % 1) % 1) % 1) % 1);
-                float borderY = 0.5f - Math.Abs(((1 + (playerPosition.Y - viewHeight % 1) % 1) % 1) % 1);
+                
+                float borderX = 0.5f - Math.Abs(((1 + (lerpedPlayerPosition.X - viewWidth % 1) % 1) % 1) % 1);
+                float borderY = 0.5f - Math.Abs(((1 + (lerpedPlayerPosition.Y - viewHeight % 1) % 1) % 1) % 1);
                 float _x = borderX + x;
                 float _y = borderY + y;
-                int mapX = (int)Math.Floor(playerPosition.X - viewWidth / 2 + borderX) + x;
-                int mapY = (int)Math.Floor(playerPosition.Y - viewHeight / 2 + borderY) + y;
+                int mapX = (int)Math.Floor(lerpedPlayerPosition.X - viewWidth / 2 + borderX) + x;
+                int mapY = (int)Math.Floor(lerpedPlayerPosition.Y - viewHeight / 2 + borderY) + y;
 
                 // Отрисовка за пределами карты
                 if (mapX < 0 || mapY < 0 || mapX > DataManager.map.width || mapY > DataManager.map.height)
                 {
-                    texture = TextureManager.textures["NoneFloor"];
+                    texture = TextureManager.GetTexture("NoneFloor", out Rectangle rectangle, out Vector2 origin);
                     spriteBatch.Draw(
                         texture, 
                         new Vector2(_x, _y) * tileScale, 
-                        null, 
+                        rectangle, 
                         Color.White, 
                         0f, 
-                        new Vector2(texture.Width, texture.Height)/2,
+                        origin,
                         tileScale/32, 
                         SpriteEffects.None, 
                         0f);
@@ -75,14 +79,14 @@ public static class ViewManager
                     // Отрисовка пола карты
                     if (tile.floor >= 0)
                     {
-                        texture = TextureManager.textures[floor];
+                        texture = TextureManager.GetTexture(floor, out Rectangle rectangle, out Vector2 origin);
                         spriteBatch.Draw(
                             texture,
                             new Vector2(_x, _y) * tileScale,
-                            null,
+                            rectangle,
                             Color.White,
                             0f,
-                            new Vector2(texture.Width, texture.Height) / 2,
+                            origin,
                             tileScale / 32,
                             SpriteEffects.None,
                             0f);
@@ -91,14 +95,14 @@ public static class ViewManager
                     // Отрисовка стен карты
                     if (tile.wall > 0)
                     {
-                        texture = TextureManager.textures[wall];
+                        texture = TextureManager.GetTexture(wall, out Rectangle rectangle, out Vector2 origin);
                         spriteBatch.Draw(
                             texture,
                             new Vector2(_x, _y) * tileScale,
-                            null,
+                            rectangle,
                             Color.White,
                             0f,
-                            new Vector2(texture.Width, texture.Height) / 2,
+                            origin,
                             tileScale / 32,
                             SpriteEffects.None,
                             0f);
@@ -137,17 +141,30 @@ public static class ViewManager
         // Отрисовка сущностей
         foreach (Entity entity in entities)
         {
+            Entity oldEntity = DataManager.oldMap.GetEntity(entity.id);
+            if (oldEntity == null)
+            {
+                oldEntity = entity;
+            }
+            
+            Vector2 lerpedEntityPosition = Vector2.Lerp(oldEntity.position, entity.position, TimeManager.deltaTime);
+            
+            Vector2 entityPosition = new Vector2(
+                (lerpedEntityPosition.X - lerpedPlayerPosition.X) * tileScale + spriteBatch.GraphicsDevice.Viewport.Width / 2,
+                (lerpedEntityPosition.Y - lerpedPlayerPosition.Y) * tileScale + spriteBatch.GraphicsDevice.Viewport.Height / 2);
+
+            string entityName = entity.GetType().Name.ToString();
             if (entity is Creature creature)
             {
-                Texture2D texture = TextureManager.textures[creature.GetType().Name.ToString() + creature.rotation];
+                Texture2D texture = TextureManager.GetTexture(entityName + creature.rotation, out Rectangle rectangle, out Vector2 origin);
+                
                 spriteBatch.Draw(
                     texture,
-                    new Vector2((entity.position.X - playerPosition.X) * tileScale + spriteBatch.GraphicsDevice.Viewport.Width/2,
-                        (entity.position.Y - playerPosition.Y) * tileScale + spriteBatch.GraphicsDevice.Viewport.Height/2),
-                    null,
+                    entityPosition,
+                    rectangle,
                     Color.White,
                     0f,
-                    new Vector2(texture.Width, texture.Height)/2,
+                    origin,
                     tileScale/32,
                     SpriteEffects.None,
                     0f);

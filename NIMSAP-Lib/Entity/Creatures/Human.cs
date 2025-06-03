@@ -12,6 +12,7 @@ public class Human : Creature
         health = 100;
         maxHealth = 100;
         this.position = position;
+        // collider = new Rectangle()
     }
 
     public static Human CreateEntity(Vector2 position, Guid guid)

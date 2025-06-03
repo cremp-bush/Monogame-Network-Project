@@ -22,7 +22,7 @@ public class Game1 : Game
     {
         _graphics = new GraphicsDeviceManager(this);
         // Content.RootDirectory = "Resources/Textures";
-        Content.RootDirectory = @"Content\Textures";
+        Content.RootDirectory = @"Content";
         IsMouseVisible = true;
     }
 
@@ -33,13 +33,13 @@ public class Game1 : Game
         network.Start(1488);
         network.DataReceived += DataManager.UpdateData;
             
-        _graphics.PreferredBackBufferWidth = 1920;
-        _graphics.PreferredBackBufferHeight = 1080;
-        _graphics.IsFullScreen = true;
-        _graphics.ApplyChanges();
+        // _graphics.PreferredBackBufferWidth = 1920;
+        // _graphics.PreferredBackBufferHeight = 1080;
+        // _graphics.IsFullScreen = true;
+        // _graphics.ApplyChanges();
 
-        // ViewManager.SetResolution(_graphics.GraphicsDevice.Viewport.Width, _graphics.GraphicsDevice.Viewport.Height);
-        ViewManager.SetResolution(1920, 1080);
+        ViewManager.SetResolution(_graphics.GraphicsDevice.Viewport.Width, _graphics.GraphicsDevice.Viewport.Height);
+        // ViewManager.SetResolution(1920, 1080);
         
         // TODO: Add your initialization logic here
 
@@ -71,6 +71,8 @@ public class Game1 : Game
         }
         
         // TODO: Add your update logic here
+        TimeManager.Update(gameTime);
+        TextureManager.Update(gameTime);
 
         base.Update(gameTime);
     }
@@ -82,7 +84,7 @@ public class Game1 : Game
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null);
         
         // Пока что текстуры прогружаются после загрузки карты
-        if (DataManager.map != null) ViewManager.Update(_spriteBatch, _graphics);
+        if (DataManager.map != null) ViewManager.Update(_spriteBatch, _graphics, gameTime);
         
         _spriteBatch.End();
 
